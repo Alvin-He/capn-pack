@@ -1,0 +1,28 @@
+[package]
+name = "capn-pack-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.capn-pack]
+path = ".."
+
+[[bin]]
+name = "capnpack_full"
+path = "fuzz_targets/capnpack_full.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "unpack_possibly_invalid"
+path = "fuzz_targets/unpack_possibly_invalid.rs"
+test = false
+doc = false
+bench = false

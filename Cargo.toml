@@ -1,0 +1,9 @@
+[package]
+name = "capn-pack"
+version = "0.1.0"
+edition = "2024"
+
+
+[lib]
+name = "capnpack"
+path = "src/lib.rs"
