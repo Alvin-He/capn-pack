@@ -3,6 +3,8 @@ use std::{fs::File, io::{self, Read}};
 
 use capnpack;
 
+mod tests;
+
 fn capnpack_full(data: Vec<u8>) {
     println!("{:?}", data);
 

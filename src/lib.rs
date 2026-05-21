@@ -76,11 +76,9 @@ pub fn pack(data: &[u8]) -> Vec<u8> {
                 
                 let mut cur_chunk_zeros: u32;
                 let mut last_chunk_zeros: u32 = 0;
-                let mut last_chunk_dinitial = dn_initial;
                 for _ in 0..31 { // if after 256 byte it's still uncompressable, then we need to start another symbol
                     if dnext + 8 <= de {
                         cur_chunk_zeros = 0;
-                        last_chunk_dinitial = dnext; 
                         
                         // check the next next 8 bytes for 0s
                         for _ in 0..8 {
@@ -92,40 +90,61 @@ pub fn pack(data: &[u8]) -> Vec<u8> {
                         // this is done so we only compress when we know the next word is also compressable
                         // therefore avoiding penelty when next word is incompressable 
                         if last_chunk_zeros + cur_chunk_zeros >= 3 {
-                            break;
+                            // back track then skip forward bytes untill we reach the 1st zero
+                            // this is done so we possibly squeeze out one more byte when we can shift the compression window perfectly
+                            // so one window could contain 3 or more zeros; If not, then we still get the full performance
+                            if last_chunk_zeros > 0 {    
+                                dnext -= 16;
+                                for _ in 0..16 {
+                                    dnext += (data[dnext] != 0) as usize;
+                                } // dnext is now at the position of the first 0  
+                            } else {
+                                dnext -= 8;
+                                for _ in 0..8 {
+                                    dnext += (data[dnext] != 0) as usize;
+                                } // dnext is now at the position of the first 0
+                            }
                         } else {
                             last_chunk_zeros = cur_chunk_zeros;       
                         }
-
                     } else { // EOF last bytes handling
-                        // add rest of the non-zero bytes
+                        let bytes_left = de-dnext;
 
-                        // back track
-                        dnext = last_chunk_dinitial;
-                        for _ in 0..(de-dnext) {
-                            dnext += (data[dnext] != 0) as usize;
-                        } // dnext is now at the position of the first 0
+                        // check the next next 8 bytes for 0s
+                        cur_chunk_zeros = 0;
+                        for _ in 0..bytes_left {
+                            cur_chunk_zeros += (data[dnext] == 0) as u32;
+                            dnext += 1;
+                        }
 
-                        // add data
-                        result.push((dnext - dn_initial) as u8);
-                        result.extend_from_slice(&data[dn_initial..dnext]); 
-                    
-                        if dnext == de {
-                            return result;
-                        } else { 
+                        if last_chunk_zeros + cur_chunk_zeros >= 3 {
+                            // back track to beginning of last chunk
+                            let amount = if dnext - bytes_left - 8 >= dn_initial {
+                                bytes_left + 8
+                            } else {
+                                bytes_left
+                            };
+                            dnext -= amount;
+                            
+                            for _ in 0..amount {
+                                dnext += (data[dnext] != 0) as usize;
+                            } // dnext is now at the position of the first 0
+                        
+                            // add data
+                            result.push((dnext - dn_initial) as u8);
+                            result.extend_from_slice(&data[dn_initial..dnext]);
+                            
                             continue 'outer;
+                        } else {
+                            // add all data
+                            result.push((dnext - dn_initial) as u8);
+                            result.extend_from_slice(&data[dn_initial..dnext]);
+
+                            return result;
                         }
                     }
 
                 } // at the end of this loop, the next 16 bytes have at least 3 0x00s
-
-                // back track then skip forward bytes untill we reach the 1st zero
-                // this is done so we possibly squeeze out one more byte when we can shift the compression window perfectly
-                // so one window could contain 3 or more zeros; If not, then we still get the full performance
-                dnext = last_chunk_dinitial;
-                for _ in 0..8 {
-                    dnext += (data[dnext] != 0) as usize;
-                } // dnext is now at the position of the first 0
 
                 result.push((dnext - dn_initial) as u8); // guranteed to be within u8::MIN..=u8::MAX
                 result.extend_from_slice(&data[dn_initial..dnext]); // push data

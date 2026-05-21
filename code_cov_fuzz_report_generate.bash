@@ -7,6 +7,8 @@ SCRIPT_DIR="$(dirname -- "${SCRIPT_PATH}")"
 
 cd "${SCRIPT_DIR}"
 
+echo "Generating code coverage reports in ./target !"
+
 cargo +nightly fuzz coverage unpack_possibly_invalid -O 
 
 cargo +nightly cov -- show target/x86_64-unknown-linux-gnu/coverage/x86_64-unknown-linux-gnu/release/unpack_possibly_invalid \
