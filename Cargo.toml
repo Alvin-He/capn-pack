@@ -1,6 +1,6 @@
 [package]
 name = "capnpack"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2024"
 authors = ["Alvin-He <zhongjihe.alvin@gmail.com>"]
 categories = ["compression"]
@@ -10,6 +10,12 @@ repository = "https://github.com/Alvin-He/capn-pack"
 documentation = "https://docs.rs/capnpack"
 description = "CapnProto's packing algorithm for any binary data"
 readme = "README.md"
+exclude = [
+    "src/main.rs",
+    "src/tests.rs",
+    "*.bash"
+]
+
 
 [lib]
 name = "capnpack"
