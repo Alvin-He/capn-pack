@@ -1,7 +1,20 @@
 use std::{error::Error, fmt};
 
 
-
+/// Pack some data using Capn-Pack
+/// 
+/// # Ex:
+/// ```
+/// // Packing:
+/// let data = vec![1, 0, 0, 0, 2, 3, 4, 5];
+/// let packed = capnpack::pack(&data);
+/// 
+/// // Un-packing:
+/// let packed = vec![0xF1, 1, 2, 3, 4, 5];
+/// let unpacked_data = capnpack::unpack(&packed, 8).unwrap(); // size hint can be any reasonable number
+/// 
+/// assert_eq!(unpacked_data, data);
+/// ```
 pub fn pack(data: &[u8]) -> Vec<u8> {
     let mut result = Vec::with_capacity(data.len());
 
@@ -181,7 +194,10 @@ pub fn pack(data: &[u8]) -> Vec<u8> {
     result
 }
 
-#[derive(Debug, PartialEq)]
+/// This error indicates `capnpack::unwarp` needed more data, but was unable to get it.
+/// <br>
+/// `self.0` contains the tag that generated this error.
+#[derive(Debug, PartialEq, Clone, Copy, Hash, Eq, PartialOrd, Ord)]
 pub struct UnexpectedEOF(u8);
 impl fmt::Display for UnexpectedEOF {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -190,6 +206,27 @@ impl fmt::Display for UnexpectedEOF {
 }
 impl Error for UnexpectedEOF {}
 
+/// Un-pack some data packed using Capn-Pack<br>
+/// <br>
+/// `expected_size_hint` is a hint for how many bytes you expect to receive.
+/// This can be any number, `unpack()` will always allocate an output buffer of at least this size. 
+/// Performance greatly increases if `expected_size_hint` is >= what unpack actually needs.
+/// <br><br>
+/// `unpack()` may return `capnpack::UnexpectedEOF` if ran out of data while unpacking. 
+/// However, the lack of this error **does not** guarantee any thing in terms of weather or not the data is valid.
+/// 
+/// ### Ex:
+/// ```
+/// // Packing:
+/// let data = vec![1, 0, 0, 0, 2, 3, 4, 5];
+/// let packed = capnpack::pack(&data);
+/// 
+/// // Un-packing:
+/// let packed = vec![0xF1, 1, 2, 3, 4, 5];
+/// let unpacked_data = capnpack::unpack(&packed, 8).unwrap(); // size hint can be any reasonable number
+/// 
+/// assert_eq!(unpacked_data, data);
+/// ```
 pub fn unpack(data: &[u8], expected_size_hint: usize) -> Result<Vec<u8>, UnexpectedEOF> {
     let mut result = Vec::with_capacity(expected_size_hint + (expected_size_hint / 16));
 
@@ -202,7 +239,7 @@ pub fn unpack(data: &[u8], expected_size_hint: usize) -> Result<Vec<u8>, Unexpec
 
         match tag {
             0x00 => {
-                if !(dnext < de) { return Err(UnexpectedEOF(0x00)); }
+                if dnext >= de { return Err(UnexpectedEOF(0x00)); }
 
                 let size = data[dnext] as usize + 1;
                 dnext += 1;
@@ -210,7 +247,7 @@ pub fn unpack(data: &[u8], expected_size_hint: usize) -> Result<Vec<u8>, Unexpec
                 result.resize(result.len() + size, 0x00);
             },
             0xff => {
-                if !(dnext + 9 <= de) { // this can happen for very small uncompresseable bytes
+                if dnext + 9 > de { // this can happen for very small uncompresseable bytes
                     // less than 9 bytes, so we'll just give them everything we got
                     result.extend_from_slice(&data[dnext..de]);
                     return Ok(result);
@@ -222,7 +259,7 @@ pub fn unpack(data: &[u8], expected_size_hint: usize) -> Result<Vec<u8>, Unexpec
                 let size = data[dnext] as usize;
                 dnext += 1;
                 
-                if !(dnext + size <= de) {
+                if dnext + size > de {
                     return Err(UnexpectedEOF(0xff));
                 }
 

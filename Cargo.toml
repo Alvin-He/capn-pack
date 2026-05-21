@@ -1,8 +1,15 @@
 [package]
-name = "capn-pack"
-version = "0.1.0"
+name = "capnpack"
+version = "1.0.1"
 edition = "2024"
-
+authors = ["Alvin-He <zhongjihe.alvin@gmail.com>"]
+categories = ["compression"]
+keywords = ["encoding", "serialization", "packing", "capnpack", "capnproto"]
+license = "MIT"
+repository = "https://github.com/Alvin-He/capn-pack"
+documentation = "https://docs.rs/capnpack"
+description = "CapnProto's packing algorithm for any binary data"
+readme = "README.md"
 
 [lib]
 name = "capnpack"
