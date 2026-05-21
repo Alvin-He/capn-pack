@@ -16,6 +16,9 @@ exclude = [
     "*.bash"
 ]
 
+[profile.release]
+lto = "fat"
+opt-level = 3
 
 [lib]
 name = "capnpack"
