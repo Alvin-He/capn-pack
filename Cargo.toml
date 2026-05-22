@@ -1,6 +1,6 @@
 [package]
 name = "capnpack"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2024"
 authors = ["Alvin-He <zhongjihe.alvin@gmail.com>"]
 categories = ["compression"]
