@@ -143,6 +143,8 @@ pub fn pack(data: &[u8]) -> Vec<u8> {
                                     dnext += (data[dnext] != 0) as usize;
                                 } // dnext is now at the position of the first 0
                             }
+
+                            break;
                         } else {
                             last_chunk_zeros = cur_chunk_zeros;       
                         }
@@ -183,7 +185,7 @@ pub fn pack(data: &[u8]) -> Vec<u8> {
                         }
                     }
 
-                } // at the end of this loop, the next 16 bytes have at least 3 0x00s
+                } // at the end of this loop, the next 16 bytes have at least 3 0x00s or we are EOF
 
                 result.push((dnext - dn_initial) as u8); // guranteed to be within u8::MIN..=u8::MAX
                 result.extend_from_slice(&data[dn_initial..dnext]); // push data
